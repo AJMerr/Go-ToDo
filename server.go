@@ -32,8 +32,12 @@ func main() {
 
 	router.HandleFunc("/notes/{id}", getNote).Methods("GET")
 
+	router.HandleFunc("/notes/{id}", updateNote).Methods("PUT")
+
+	router.HandleFunc("/notes/{id}", deleteNote).Methods("DELETE")
+
 	//  Starts the server at port 8080
-	fmt.Println("Now listening on ")
+	fmt.Println("Now listening on PORT: 5000")
 	log.Fatal(http.ListenAndServe(":5000", router))
 }
 
@@ -60,12 +64,12 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 	var idParam string = mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		w.WriteHeader(404)
+		w.WriteHeader(400)
 		w.Write([]byte("ID could not be converted into an integer"))
 	}
 
 	if id >= len(notes) {
-		w.WriteHeader(400)
+		w.WriteHeader(404)
 		w.Write([]byte("404: No Notes found"))
 	}
 
@@ -73,4 +77,47 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(notes)
+}
+
+// Edit a note
+func updateNote(w http.ResponseWriter, r *http.Request) {
+	var idParam string = mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte("ID could not be converted into an integer"))
+	}
+
+	if id >= len(notes) {
+		w.WriteHeader(404)
+		w.Write([]byte("404 Item could not be updated"))
+	}
+
+	var updateNote Note
+	json.NewDecoder(r.Body).Decode(&updateNote)
+
+	notes[id] = updateNote
+
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(updateNote)
+}
+
+// Deletes a note
+func deleteNote(w http.ResponseWriter, r *http.Request) {
+	var idParam string = mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte("Error 400: ID cannot be  converted into an integer"))
+	}
+
+	if id >= len(notes) {
+		w.WriteHeader(494)
+		w.Write([]byte("Error 404: ID not found"))
+	}
+
+	notes = append(notes[:id], notes[id+1:]...)
+
+	w.WriteHeader(200)
 }
